@@ -1,0 +1,114 @@
+{
+  "EmptyLatentImage": {
+    "inputs": {
+      "width": 768,
+      "height": 1024,
+      "batch_size": 4
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "VAEDecode": {
+    "inputs": {
+      "samples": ["KSampler", 0],
+      "vae": ["VAELoader", 0]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "VAELoader": {
+    "inputs": {
+      "vae_name": "flux_ae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "CLIPTextEncode": {
+    "inputs": {
+      "text": "a ka123tty a woman in a caffee photorealistick photo, upper body",
+      "clip": ["DualCLIPLoader", 0]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "DualCLIPLoader": {
+    "inputs": {
+      "clip_name1": "clip_l.safetensors",
+      "clip_name2": "t5xxl_fp16.safetensors",
+      "type": "flux"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "UNETLoader": {
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "fp8_e5m2"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "UserModel": {
+    "inputs": {
+      "lora_name": "flux/my_first_flux_lora_v1_ten.safetensors",
+      "strength_model": 1,
+      "model": ["UNETLoader", 0]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "ImageApplyLUT": {
+    "inputs": {
+      "lut_file": "CUBE LUTs/PB_Tahoe.CUBE",
+      "gamma_correction": false,
+      "clip_values": false,
+      "strength": 0.30000000000000004,
+      "image": ["VAEDecode", 0]
+    },
+    "class_type": "ImageApplyLUT+",
+    "_meta": {
+      "title": "🔧 Image Apply LUT"
+    }
+  },
+  "PreviewImage": {
+    "inputs": {
+      "images": ["ImageApplyLUT", 0]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "KSampler": {
+    "inputs": {
+      "seed": 186155212667404,
+      "steps": 4,
+      "cfg": 5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": ["UserModel", 0],
+      "positive": ["CLIPTextEncode", 0],
+      "negative": ["CLIPTextEncode", 0],
+      "latent_image": ["EmptyLatentImage", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  }
+}

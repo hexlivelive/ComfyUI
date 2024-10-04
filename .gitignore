@@ -20,3 +20,4 @@ venv/
 *.log
 web_custom_versions/
 .DS_Store
+/scripts_local/node_modules
