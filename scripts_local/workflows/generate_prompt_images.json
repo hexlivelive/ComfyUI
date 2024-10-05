@@ -1,26 +1,25 @@
 {
-  "EmptyLatentImage": {
+  "6": {
     "inputs": {
-      "width": 768,
-      "height": 1024,
-      "batch_size": 4
+      "text": ["Prompt", 0],
+      "clip": ["UserLora", 1]
     },
-    "class_type": "EmptyLatentImage",
+    "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "Empty Latent Image"
+      "title": "CLIP Text Encode"
     }
   },
-  "VAEDecode": {
+  "8": {
     "inputs": {
-      "samples": ["KSampler", 0],
-      "vae": ["VAELoader", 0]
+      "samples": ["13", 0],
+      "vae": ["10", 0]
     },
     "class_type": "VAEDecode",
     "_meta": {
       "title": "VAE Decode"
     }
   },
-  "VAELoader": {
+  "10": {
     "inputs": {
       "vae_name": "flux_ae.safetensors"
     },
@@ -29,20 +28,10 @@
       "title": "Load VAE"
     }
   },
-  "CLIPTextEncode": {
+  "11": {
     "inputs": {
-      "text": "a ka123tty a woman in a caffee photorealistick photo, upper body",
-      "clip": ["DualCLIPLoader", 0]
-    },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Prompt)"
-    }
-  },
-  "DualCLIPLoader": {
-    "inputs": {
-      "clip_name1": "clip_l.safetensors",
-      "clip_name2": "t5xxl_fp16.safetensors",
+      "clip_name1": "t5xxl_fp16.safetensors",
+      "clip_name2": "clip_l.safetensors",
       "type": "flux"
     },
     "class_type": "DualCLIPLoader",
@@ -50,65 +39,166 @@
       "title": "DualCLIPLoader"
     }
   },
-  "UNETLoader": {
+  "13": {
     "inputs": {
-      "unet_name": "flux1-dev.safetensors",
-      "weight_dtype": "fp8_e5m2"
+      "noise": ["RandomNoise", 0],
+      "guider": ["22", 0],
+      "sampler": ["16", 0],
+      "sigmas": ["BasicScheduler", 0],
+      "latent_image": ["SDXLEmptyLatentSizePicker", 0]
     },
-    "class_type": "UNETLoader",
+    "class_type": "SamplerCustomAdvanced",
     "_meta": {
-      "title": "Load Diffusion Model"
+      "title": "SamplerCustomAdvanced"
     }
   },
-  "UserModel": {
+  "16": {
     "inputs": {
-      "lora_name": "flux/my_first_flux_lora_v1_ten.safetensors",
-      "strength_model": 1,
-      "model": ["UNETLoader", 0]
+      "sampler_name": "euler"
     },
-    "class_type": "LoraLoaderModelOnly",
+    "class_type": "KSamplerSelect",
     "_meta": {
-      "title": "LoraLoaderModelOnly"
+      "title": "Sampler selection"
     }
   },
-  "ImageApplyLUT": {
+  "BasicScheduler": {
     "inputs": {
-      "lut_file": "CUBE LUTs/PB_Tahoe.CUBE",
-      "gamma_correction": false,
-      "clip_values": false,
+      "scheduler": "beta",
+      "steps": 30,
+      "denoise": ["345", 0],
+      "model": ["37", 0]
+    },
+    "class_type": "BasicScheduler",
+    "_meta": {
+      "title": "Scheduler selection and Steps"
+    }
+  },
+  "22": {
+    "inputs": {
+      "model": ["37", 0],
+      "conditioning": ["26", 0]
+    },
+    "class_type": "BasicGuider",
+    "_meta": {
+      "title": "BasicGuider"
+    }
+  },
+  "RandomNoise": {
+    "inputs": {
+      "noise_seed": 1019676128472769
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Seed and seed-switch (random/fixed)"
+    }
+  },
+  "26": {
+    "inputs": {
+      "guidance": 3.5,
+      "conditioning": ["6", 0]
+    },
+    "class_type": "FluxGuidance",
+    "_meta": {
+      "title": "FluxGuidance"
+    }
+  },
+  "37": {
+    "inputs": {
+      "max_shift": 1.1500000000000001,
+      "base_shift": 0.5,
+      "width": ["SDXLEmptyLatentSizePicker", 1],
+      "height": ["SDXLEmptyLatentSizePicker", 2],
+      "model": ["LoraLoaderModelOnly", 0]
+    },
+    "class_type": "ModelSamplingFlux",
+    "_meta": {
+      "title": "ModelSamplingFlux"
+    }
+  },
+  "Prompt": {
+    "inputs": {
+      "prompt": "a high-resolution photograph featuring a ka123tty woman sitting in a caffee"
+    },
+    "class_type": "CR Prompt Text",
+    "_meta": {
+      "title": "Classic Prompt (txt2img)"
+    }
+  },
+  "LUT": {
+    "inputs": {
+      "lut_file": "CUBE LUTs/Presetpro - Velvia 100.cube",
+      "gamma_correction": true,
+      "clip_values": true,
       "strength": 0.30000000000000004,
-      "image": ["VAEDecode", 0]
+      "image": ["8", 0]
     },
     "class_type": "ImageApplyLUT+",
     "_meta": {
       "title": "🔧 Image Apply LUT"
     }
   },
+  "SDXLEmptyLatentSizePicker": {
+    "inputs": {
+      "resolution": "832x1216 (0.68)",
+      "batch_size": 4,
+      "width_override": 0,
+      "height_override": 0
+    },
+    "class_type": "SDXLEmptyLatentSizePicker+",
+    "_meta": {
+      "title": "Basic Image size"
+    }
+  },
+  "222": {
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load FLUX original Model (switch = true)"
+    }
+  },
+  "345": {
+    "inputs": {
+      "value": 1
+    },
+    "class_type": "easy float",
+    "_meta": {
+      "title": "Denoise (Default: 1.0)"
+    }
+  },
+  "UserLora": {
+    "inputs": {
+      "lora_name": "flux/my_first_flux_lora_v1_ten.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": ["222", 0],
+      "clip": ["11", 0]
+    },
+    "class_type": "Lora Loader",
+    "_meta": {
+      "title": "Lora Loader"
+    }
+  },
+  "LoraLoaderModelOnly": {
+    "inputs": {
+      "lora_name": "FluxDFaeTasticDetails.safetensors",
+      "strength_model": 0.3,
+      "model": ["UserLora", 0]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
   "PreviewImage": {
     "inputs": {
-      "images": ["ImageApplyLUT", 0]
+      "images": ["LUT", 0]
     },
     "class_type": "PreviewImage",
     "_meta": {
       "title": "Preview Image"
-    }
-  },
-  "KSampler": {
-    "inputs": {
-      "seed": 186155212667404,
-      "steps": 4,
-      "cfg": 5,
-      "sampler_name": "euler",
-      "scheduler": "simple",
-      "denoise": 1,
-      "model": ["UserModel", 0],
-      "positive": ["CLIPTextEncode", 0],
-      "negative": ["CLIPTextEncode", 0],
-      "latent_image": ["EmptyLatentImage", 0]
-    },
-    "class_type": "KSampler",
-    "_meta": {
-      "title": "KSampler"
     }
   }
 }

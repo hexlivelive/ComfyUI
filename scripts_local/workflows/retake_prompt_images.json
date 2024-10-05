@@ -1,0 +1,211 @@
+{
+  "222": {
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load FLUX original Model (switch = true)"
+    }
+  },
+  "348": {
+    "inputs": {
+      "lora_name": "FluxDFaeTasticDetails.safetensors",
+      "strength_model": 0.3,
+      "model": ["UserLora", 0]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "LatentUpscaleBy": {
+    "inputs": {
+      "upscale_method": "bicubic",
+      "scale_by": 1.1,
+      "samples": ["RepeatLatentBatch", 0]
+    },
+    "class_type": "LatentUpscaleBy",
+    "_meta": {
+      "title": "Upscale Latent By"
+    }
+  },
+  "Denoise": {
+    "inputs": {
+      "Xi": 0,
+      "Xf": 0.65,
+      "isfloatX": 1
+    },
+    "class_type": "mxSlider",
+    "_meta": {
+      "title": "img2img Denoise (range: 0.30 - 0.90)"
+    }
+  },
+  "363": {
+    "inputs": {
+      "pixels": ["LoadImageFromUrl", 0],
+      "vae": ["VAELoader", 0]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "BasicScheduler": {
+    "inputs": {
+      "scheduler": "beta",
+      "steps": 25,
+      "denoise": ["Denoise", 0],
+      "model": ["348", 0]
+    },
+    "class_type": "BasicScheduler",
+    "_meta": {
+      "title": "Scheduler selection and Steps"
+    }
+  },
+  "365": {
+    "inputs": {
+      "noise": ["RandomNoise", 0],
+      "guider": ["368", 0],
+      "sampler": ["367", 0],
+      "sigmas": ["BasicScheduler", 0],
+      "latent_image": ["LatentUpscaleBy", 0]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "RandomNoise": {
+    "inputs": {
+      "noise_seed": 155985244165214
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Seed and seed-switch (random/fixed)"
+    }
+  },
+  "367": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "Sampler selection"
+    }
+  },
+  "368": {
+    "inputs": {
+      "model": ["348", 0],
+      "conditioning": ["FluxGuidance", 0]
+    },
+    "class_type": "BasicGuider",
+    "_meta": {
+      "title": "BasicGuider"
+    }
+  },
+  "PreviewImage": {
+    "inputs": {
+      "images": ["370", 0]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "370": {
+    "inputs": {
+      "samples": ["365", 0],
+      "vae": ["VAELoader", 0]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "RepeatLatentBatch": {
+    "inputs": {
+      "amount": 2,
+      "samples": ["363", 0]
+    },
+    "class_type": "RepeatLatentBatch",
+    "_meta": {
+      "title": "Repeat Latent Batch"
+    }
+  },
+  "Prompt": {
+    "inputs": {
+      "prompt": "a high-resolution photograph featuring a ka123tty woman sitting in a caffee"
+    },
+    "class_type": "CR Prompt Text",
+    "_meta": {
+      "title": "Classic Prompt (txt2img)"
+    }
+  },
+  "DualCLIPLoader": {
+    "inputs": {
+      "clip_name1": "t5xxl_fp16.safetensors",
+      "clip_name2": "clip_l.safetensors",
+      "type": "flux"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "VAELoader": {
+    "inputs": {
+      "vae_name": "flux_ae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "LoadImageFromUrl": {
+    "inputs": {
+      "image": "https://imagedelivery.net/hUZkA7QQ8hV1UxYbRNOnKw/7924d42b-453b-46ef-bdd6-fd10c4d1e200/original",
+      "keep_alpha_channel": false,
+      "output_mode": false,
+      "choose image to upload": "image"
+    },
+    "class_type": "LoadImageFromUrl",
+    "_meta": {
+      "title": "Load Image From URL"
+    }
+  },
+  "UserLora": {
+    "inputs": {
+      "lora_name": "flux/my_first_flux_lora_v1_ten.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": ["222", 0],
+      "clip": ["DualCLIPLoader", 0]
+    },
+    "class_type": "Lora Loader",
+    "_meta": {
+      "title": "Lora Loader"
+    }
+  },
+  "CLIPTextEncode": {
+    "inputs": {
+      "text": ["Prompt", 0],
+      "clip": ["UserLora", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode"
+    }
+  },
+  "FluxGuidance": {
+    "inputs": {
+      "guidance": 3.5,
+      "conditioning": ["CLIPTextEncode", 0]
+    },
+    "class_type": "FluxGuidance",
+    "_meta": {
+      "title": "FluxGuidance"
+    }
+  }
+}

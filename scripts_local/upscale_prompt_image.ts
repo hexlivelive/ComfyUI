@@ -4,13 +4,13 @@ import { Buffer } from "buffer";
 import * as uuid from "uuid";
 import * as fs from "fs";
 import { MongoClient, Db } from "mongodb"; // MongoDB client
-import generate_prompt_images from "./workflows/generate_prompt_images.json";
+import upscale_prompt_image from "./workflows/upscale_prompt_image.json";
 import CloudflareImageService from "./cloudlfare.service";
 
 const serverAddress = "http://127.0.0.1:8188";
 const clientId = uuid.v4();
 
-export async function promptImageGeneration(task: any, db: Db) {
+export async function upscalePromptImage(task: any, db: Db) {
   console.log(`Processing task: ${task._id}`);
 
   return new Promise((resolve, reject) => {
@@ -18,21 +18,14 @@ export async function promptImageGeneration(task: any, db: Db) {
     const start = new Date().getTime();
     ws.on("open", async () => {
       try {
-        const prompt = generate_prompt_images;
+        const prompt = upscale_prompt_image;
 
         // Customize the prompt based on the task
-        const randomSeed =
-          task.metaData.seed === 0
-            ? Math.floor(Math.random() * 1000000000)
-            : task.metaData.seed;
-        prompt["RandomNoise"]["inputs"]["noise_seed"] = randomSeed;
-        prompt["SDXLEmptyLatentSizePicker"]["inputs"]["batch_size"] =
-          task.metaData.numberOfImages || 4;
-        prompt["BasicScheduler"]["inputs"]["steps"] = 15;
-        prompt["Prompt"]["inputs"]["prompt"] =
-          task.metaData.prompt ||
-          "a ka123tty a woman in a cafe photorealistic photo, upper body";
-
+        const randomSeed = Math.floor(Math.random() * 1000000000);
+        prompt["UltimateSDUpscale"]["inputs"]["seed"] = randomSeed;
+        prompt["UltimateSDUpscale"]["inputs"]["steps"] = 10;
+        prompt["LoadImageFromUrl"]["inputs"]["image"] = task.metaData.imageUrl;
+        prompt["Prompt"]["inputs"]["prompt"] = task.metaData.prompt;
         const images = (await getImages(ws, prompt)) as {
           PreviewImage: Buffer[];
         };
@@ -139,3 +132,36 @@ async function getImages(ws: WebSocket, prompt: any) {
     });
   });
 }
+
+const task = {
+  _id: {
+    $oid: "6700ffb75a526d9bc6c5ab66",
+  },
+  taskType: "promptImageUpscale",
+  userId: {
+    $oid: "66fe095b474ae40962b3ff74",
+  },
+  metaData: {
+    modelId: "",
+    prompt:
+      " ka123tty a woman at a pop-up food market at night, combining the love for street food with nightlife, close shot, reality",
+    imageUrl:
+      "https://imagedelivery.net/hUZkA7QQ8hV1UxYbRNOnKw/30698b02-3fd7-4c5a-00ab-f4d241aa2100/original",
+    numberOfImages: 1,
+    aspectRatio: "verticalPortrait",
+  },
+  processingStatus: "none",
+  server: null,
+  completed: false,
+  result: null,
+  trainingLog: null,
+  progress: null,
+  timeLeft: null,
+  createdAt: {
+    $date: "2024-10-05T08:58:31.434Z",
+  },
+  updatedAt: {
+    $date: "2024-10-05T08:58:31.434Z",
+  },
+  __v: 0,
+};

@@ -1,0 +1,157 @@
+{
+  "CLIPTextEncode": {
+    "inputs": {
+      "text": ["Prompt", 0],
+      "clip": ["UserLora", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode"
+    }
+  },
+  "VAELoader": {
+    "inputs": {
+      "vae_name": "flux_ae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "DualCLIPLoader": {
+    "inputs": {
+      "clip_name1": "t5xxl_fp16.safetensors",
+      "clip_name2": "clip_l.safetensors",
+      "type": "flux"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "FluxGuidance": {
+    "inputs": {
+      "guidance": 3.5,
+      "conditioning": ["CLIPTextEncode", 0]
+    },
+    "class_type": "FluxGuidance",
+    "_meta": {
+      "title": "FluxGuidance"
+    }
+  },
+  "Prompt": {
+    "inputs": {
+      "prompt": "a high-resolution photograph featuring a ka123tty woman sitting in a caffee"
+    },
+    "class_type": "CR Prompt Text",
+    "_meta": {
+      "title": "Classic Prompt (txt2img)"
+    }
+  },
+  "222": {
+    "inputs": {
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load FLUX original Model (switch = true)"
+    }
+  },
+  "345": {
+    "inputs": {
+      "value": 1
+    },
+    "class_type": "easy float",
+    "_meta": {
+      "title": "Denoise (Default: 1.0)"
+    }
+  },
+  "UserLora": {
+    "inputs": {
+      "lora_name": "flux/my_first_flux_lora_v1_ten.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": ["222", 0],
+      "clip": ["DualCLIPLoader", 0]
+    },
+    "class_type": "Lora Loader",
+    "_meta": {
+      "title": "Lora Loader"
+    }
+  },
+  "348": {
+    "inputs": {
+      "lora_name": "FluxDFaeTasticDetails.safetensors",
+      "strength_model": 0.3,
+      "model": ["UserLora", 0]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "352": {
+    "inputs": {
+      "model_name": "4x_NMKD-Siax_200k.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load Upscale Model"
+    }
+  },
+  "UltimateSDUpscale": {
+    "inputs": {
+      "upscale_by": 1.5,
+      "seed": 766746701673769,
+      "steps": 8,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "beta",
+      "denoise": 0.35000000000000003,
+      "mode_type": "Linear",
+      "tile_width": 1024,
+      "tile_height": 1024,
+      "mask_blur": 8,
+      "tile_padding": 32,
+      "seam_fix_mode": "None",
+      "seam_fix_denoise": 1,
+      "seam_fix_width": 64,
+      "seam_fix_mask_blur": 8,
+      "seam_fix_padding": 16,
+      "force_uniform_tiles": true,
+      "tiled_decode": false,
+      "image": ["LoadImageFromUrl", 0],
+      "model": ["348", 0],
+      "positive": ["FluxGuidance", 0],
+      "negative": ["FluxGuidance", 0],
+      "vae": ["VAELoader", 0],
+      "upscale_model": ["352", 0]
+    },
+    "class_type": "UltimateSDUpscale",
+    "_meta": {
+      "title": "Ultimate SD Upscale"
+    }
+  },
+  "PreviewImage": {
+    "inputs": {
+      "images": ["UltimateSDUpscale", 0]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "LoadImageFromUrl": {
+    "inputs": {
+      "image": "https://imagedelivery.net/hUZkA7QQ8hV1UxYbRNOnKw/7924d42b-453b-46ef-bdd6-fd10c4d1e200/original",
+      "keep_alpha_channel": false,
+      "output_mode": false,
+      "choose image to upload": "image"
+    },
+    "class_type": "LoadImageFromUrl",
+    "_meta": {
+      "title": "Load Image From URL"
+    }
+  }
+}
