@@ -5,7 +5,11 @@ import * as uuid from "uuid";
 import * as fs from "fs";
 import { MongoClient, Db } from "mongodb"; // MongoDB client
 import upscale_prompt_image from "./workflows/retake_prompt_images.json";
-import CloudflareImageService from "./cloudlfare.service";
+import CloudflareImageService, {
+  BucketName,
+  CloudflareR2Service,
+  ContentType,
+} from "./cloudlfare.service";
 
 const serverAddress = "http://127.0.0.1:8188";
 const clientId = uuid.v4();
@@ -34,31 +38,42 @@ export async function retakePromptImage(task: any, db: Db) {
           PreviewImage: Buffer[];
         };
 
-        let imageGroup;
+        let imageIncrement = 0;
+        const uploadedKeys: string[] = [];
+        const datasetLocationPrefix = task._id.toString();
+        const bucketName = BucketName.MEDIA;
 
         // Save images to disk
         for (const [index, imageData] of images["PreviewImage"].entries()) {
-          const filePath = `image_SaveImage_${task._id}_${index + 1}.png`;
-          fs.writeFileSync(filePath, imageData);
-          imageGroup = await new CloudflareImageService(db).uploadImage({
+          imageIncrement += 1;
+          const key = `${datasetLocationPrefix}/${imageIncrement}.png`;
+
+          await new CloudflareR2Service(db).storeFile({
             buffer: imageData,
-            filename: filePath,
-            imageGroupName: "Prompt Images" + task._id.toString(),
-            imageGroupDescription: "Generated prompt images",
-            userId: task.userId,
+            contentType: ContentType.IMAGE,
+            bucketName: BucketName.MEDIA,
+            key,
           });
+
+          uploadedKeys.push(key);
 
           console.log(`Saved image ${index + 1} for task ${task._id}`);
         }
 
-        await db.collection("task").updateOne(
+        await db.collection("tasks").updateOne(
           { _id: task._id },
           {
             $set: {
               processingStatus: "completed",
               result: {
                 completedIn: new Date().getTime() - start,
-                imageUrls: imageGroup.urls,
+                imageUrls: uploadedKeys.map(
+                  (k) => `https://media.reflect-ai.us/${k}`
+                ),
+                r2LocationInfo: {
+                  bucketName,
+                  keys: uploadedKeys,
+                },
               },
             },
           }

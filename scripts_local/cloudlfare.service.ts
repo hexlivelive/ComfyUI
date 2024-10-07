@@ -3,18 +3,14 @@ import * as fs from "fs";
 import mongoose, { Model, Types } from "mongoose";
 import { MongoClient, Db } from "mongodb"; // MongoDB client
 import FormData from "form-data";
-const mongoUrl =
-  "mongodb+srv://superuser:81j704oSKVwz2G39@db-mongodb-nyc3-11975-18134e1c.mongo.ondigitalocean.com/AIv1?tls=true&authSource=admin&replicaSet=db-mongodb-nyc3-11975"; // Change to your MongoDB URI
-const dbName = "AIv1";
-
-let db: any;
-
-async function connectToMongo() {
-  const client = new MongoClient(mongoUrl);
-  await client.connect();
-  console.log("Connected to MongoDB");
-  db = client.db(dbName);
-}
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsCommand,
+  PutObjectCommand,
+  PutObjectCommandInput,
+  S3Client,
+} from "@aws-sdk/client-s3";
 
 export default class CloudflareImageService {
   private cloudflareImageGroupModel: any;
@@ -197,6 +193,89 @@ export default class CloudflareImageService {
    */
   public getImageUrl(imageId: string, variantName: string = "public") {
     const accountHash = "hUZkA7QQ8hV1UxYbRNOnKw";
-    return `https://imagedelivery.net/${accountHash}/${imageId}/${variantName}&q=100`;
+    return `https://imagedelivery.net/${accountHash}/${imageId}/${variantName}`;
+  }
+}
+
+export enum ContentType {
+  UNKNOWN = "UNKNOWN",
+  TENSOR = "TENSOR",
+  IMAGE = "IMAGE",
+  JSON = "JSON",
+  BINARY = "BINARY",
+}
+
+export enum BucketName {
+  MEDIA = "media",
+}
+
+export class CloudflareR2Service {
+  private static readonly region: string = "us-east-1";
+
+  private cloudflareR2Model: any;
+
+  constructor(db: Db) {
+    this.cloudflareR2Model = db.collection("cloudflare_r2");
+  }
+
+  public async storeFile({
+    bucketName,
+    buffer,
+    contentType,
+    key,
+  }: {
+    bucketName: string;
+    key: string;
+    buffer: Buffer;
+    contentType: ContentType;
+  }) {
+    const s3Client = this.getS3Client();
+
+    try {
+      const uploadParams: PutObjectCommandInput = {
+        Bucket: bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+      };
+
+      const command = new PutObjectCommand(uploadParams);
+      const response = await s3Client.send(command);
+
+      const cloudflareFileInfo = {
+        bucketName,
+        key: key,
+        contentType: contentType,
+        uploadedAt: new Date(),
+        _id: new Types.ObjectId(),
+      };
+
+      await this.cloudflareR2Model.insertOne(cloudflareFileInfo);
+
+      return response;
+    } catch (err) {
+      console.error("Error uploading blob to S3: ", err);
+      throw err;
+    }
+  }
+
+  private getS3Client() {
+    const CLOUDFLARE_R2_ENDPOINT =
+      "https://1a3160311616f5b7a5afa92e4e0579eb.r2.cloudflarestorage.com";
+    const CLOUDFLARE_R2_READ_WRITE_TOKEN =
+      "ogkYieVDj4ufv5FBMbY7ma3ICiAsgZUCdTXdH_9i";
+    const CLOUDFLARE_R2_READ_WRITE_ACCESS_KEY_ID =
+      "ea97978aad13478e1eff8ab84cf7fb8e";
+    const CLOUDFLARE_R2_READ_WRITE_SECRET_ACCESS_KEY =
+      "652115be058fdea62c6f2ad8618ba73ffef0e940b1f34db8789c99772688dafb";
+
+    return new S3Client({
+      region: CloudflareR2Service.region, // Specify your AWS region
+      endpoint: CLOUDFLARE_R2_ENDPOINT,
+      credentials: {
+        accessKeyId: CLOUDFLARE_R2_READ_WRITE_ACCESS_KEY_ID,
+        secretAccessKey: CLOUDFLARE_R2_READ_WRITE_SECRET_ACCESS_KEY,
+      },
+    });
   }
 }

@@ -25,7 +25,7 @@ async function connectToMongo() {
 }
 
 async function pollForTasks() {
-  const task = await db.collection("task").findOneAndUpdate(
+  const task = await db.collection("tasks").findOneAndUpdate(
     {
       processingStatus: "none",
       taskType: {
