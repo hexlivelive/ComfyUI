@@ -11,6 +11,18 @@ import {
   PutObjectCommandInput,
   S3Client,
 } from "@aws-sdk/client-s3";
+const mongoUrl =
+  "mongodb+srv://superuser:81j704oSKVwz2G39@db-mongodb-nyc3-11975-18134e1c.mongo.ondigitalocean.com/AIv1?tls=true&authSource=admin&replicaSet=db-mongodb-nyc3-11975"; // Change to your MongoDB URI
+const dbName = "AIv1";
+
+let db: any;
+
+async function connectToMongo() {
+  const client = new MongoClient(mongoUrl);
+  await client.connect();
+  console.log("Connected to MongoDB");
+  db = client.db(dbName);
+}
 
 export default class CloudflareImageService {
   private cloudflareImageGroupModel: any;

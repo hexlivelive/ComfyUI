@@ -39,6 +39,7 @@ async function pollForTasks() {
     {
       $set: {
         processingStatus: "inProgress",
+        processingStartedAt: new Date(),
       },
     }
   );
@@ -46,12 +47,14 @@ async function pollForTasks() {
   if (task) {
     console.log(`Found new task: ${task._id}`);
     await processTask(task);
-    await db
-      .collection("task")
-      .updateOne(
-        { _id: task._id },
-        { $set: { processingStatus: "completed" } }
-      );
+    await db.collection("task").updateOne(
+      { _id: task._id },
+      {
+        $set: {
+          processingStatus: "completed",
+        },
+      }
+    );
   } else {
     console.log("No new tasks found.");
   }

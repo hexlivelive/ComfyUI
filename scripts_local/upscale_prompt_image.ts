@@ -30,7 +30,19 @@ export async function upscalePromptImage(task: any, db: Db) {
         prompt["UltimateSDUpscale"]["inputs"]["steps"] = 10;
         prompt["LoadImageFromUrl"]["inputs"]["image"] = task.metaData.imageUrl;
         prompt["Prompt"]["inputs"]["prompt"] = task.metaData.prompt;
-        const images = (await getImages(ws, prompt)) as {
+
+        const updateTaskProgress = async (progress: number) => {
+          await db.collection("tasks").updateOne(
+            { _id: task._id },
+            {
+              $set: {
+                progress,
+              },
+            }
+          );
+        };
+
+        const images = (await getImages(ws, prompt, updateTaskProgress)) as {
           PreviewImage: Buffer[];
         };
 
@@ -112,13 +124,25 @@ async function getHistory(promptId: string) {
   return response.data;
 }
 
-async function getImages(ws: WebSocket, prompt: any) {
+async function getImages(
+  ws: WebSocket,
+  prompt: any,
+  updateTaskProgress: (progress: number) => Promise<void>
+) {
   const { prompt_id } = await queuePrompt(prompt);
   const outputImages: { [key: string]: Buffer[] } = {};
 
   return new Promise((resolve) => {
     ws.on("message", async (data) => {
       const message = JSON.parse(data.toString());
+      if (message.type === "progress") {
+        const { value, max } = message.data;
+
+        const progress = (value / max) * 100;
+
+        await updateTaskProgress(+progress.toFixed());
+      }
+
       if (message.type === "executing") {
         const { node, prompt_id: currentPromptId } = message.data;
         if (node === null && currentPromptId === prompt_id) {
