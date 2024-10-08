@@ -11,6 +11,7 @@ import CloudflareImageService, {
   ContentType,
 } from "./cloudlfare.service";
 import { buffer } from "stream/consumers";
+import sharp from "sharp";
 
 export enum AspectRatioEnum {
   SQUARE = "square",
@@ -98,23 +99,37 @@ export async function promptImageGeneration(task: any, db: Db) {
         };
 
         let imageIncrement = 0;
-        const uploadedKeys: string[] = [];
+        const uploadedOriginalKeys: string[] = [];
+        const uploadedOptimizedKeys: string[] = [];
         const datasetLocationPrefix = task._id.toString();
         const bucketName = BucketName.MEDIA;
 
         // Save images to disk
         for (const [index, imageData] of images["PreviewImage"].entries()) {
           imageIncrement += 1;
-          const key = `${datasetLocationPrefix}/${imageIncrement}.png`;
+          const originalKey = `${datasetLocationPrefix}/${imageIncrement}.png`;
 
           await new CloudflareR2Service(db).storeFile({
             buffer: imageData,
             contentType: ContentType.IMAGE,
             bucketName: BucketName.MEDIA,
-            key,
+            key: originalKey,
           });
 
-          uploadedKeys.push(key);
+          uploadedOriginalKeys.push(originalKey);
+
+          const optimizedKey = `${datasetLocationPrefix}/${imageIncrement}.webp`;
+
+          const optimizedImage = await sharp(imageData).webp().toBuffer();
+
+          await new CloudflareR2Service(db).storeFile({
+            buffer: optimizedImage,
+            contentType: ContentType.IMAGE,
+            bucketName: BucketName.MEDIA,
+            key: optimizedKey,
+          });
+
+          uploadedOptimizedKeys.push(optimizedKey);
 
           console.log(`Saved image ${index + 1} for task ${task._id}`);
         }
@@ -126,12 +141,18 @@ export async function promptImageGeneration(task: any, db: Db) {
               processingStatus: "completed",
               result: {
                 completedIn: new Date().getTime() - start,
-                imageUrls: uploadedKeys.map(
-                  (k) => `https://media.reflect-ai.us/${k}`
-                ),
+                imageUrls: {
+                  original: uploadedOriginalKeys.map(
+                    (k) => `https://media.reflect-ai.us/${k}`
+                  ),
+                  optimized: uploadedOptimizedKeys.map(
+                    (k) => `https://media.reflect-ai.us/${k}`
+                  ),
+                },
                 r2LocationInfo: {
                   bucketName,
-                  keys: uploadedKeys,
+                  originalKeys: uploadedOriginalKeys,
+                  optimizedKeys: uploadedOptimizedKeys,
                 },
               },
             },
